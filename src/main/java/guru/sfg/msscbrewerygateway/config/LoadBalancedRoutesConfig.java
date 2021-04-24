@@ -14,11 +14,21 @@ public class LoadBalancedRoutesConfig {
     public RouteLocator loadBalancedRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route(r -> r.path("/api/v1/beer*", "/api/v1/beer/*", "/api/v1/beerUpc/*")
-                        .uri("lb://beer-service"))
+                        //.uri("lb://beer-service"))
+                        .uri("http://localhost:8080"))
                 .route(r -> r.path("/api/v1/customers/**")
-                        .uri("lb://beer-order-service"))
+                        //.uri("lb://beer-order-service"))
+                        .uri("http://localhost:8081"))
                 .route(r -> r.path("/api/v1/beer/*/inventory")
-                        .uri("lb://beer-inventory-service"))
+                        .filters(f -> f.circuitBreaker(c -> c.setName("inventoryCB")
+                                .setFallbackUri("forward:/inventory-failover")
+                                .setRouteId("inv-failover")
+                        ))
+                        //.uri("lb://beer-inventory-service"))
+                        .uri("http://localhost:8082"))
+                .route(r -> r.path("/inventory-failover/**")
+                        //.uri("lb://inventory-failover"))
+                        .uri("http://localhost:8083"))
                 .build();
     }
 }
